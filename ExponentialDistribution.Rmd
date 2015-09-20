@@ -1,0 +1,72 @@
+---
+title: "Exploration of the Exponential Distribution"
+author: "Michael Szczepaniak"
+date: "September 2015"
+output: pdf_document
+widgets: mathjax
+---
+
+### Overview  
+The purpose of the report is to explore this [exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution) and verify that the distribution of samples means from this distribution conform to the [Central Limit Theorum](https://en.wikipedia.org/wiki/Illustration_of_the_central_limit_theorem).  Three items are checked as part of the verification: 1) the shape of the distribution of sample means (DoSM) approaches that of a normal distribution, 2) the mean of the DoSM approaches the mean of the original distribution, and 3) the variance of the DoSM approaches $\sigma^2/n$ where $\sigma^2$ is the variance of the original population and $n$ is the number of samples.
+
+### Simulations
+The function *createExpDoSM* created the plot shown below.  The top plot is the original exponential distribution and the bottom is the DoSM created by taking an average of 40 samples 1000 times.
+
+```{r echo=FALSE}
+library(ggplot2)
+## creates simulated data:
+## 1) original population from simulated exponential distribution
+## 2) DoSM from 40 samples from the original population
+## 3) distribution of sample standard deviations
+createSimData <- function(exp.rate = 0.2) {
+    data.exp.dosm <- data.frame(pop = rexp(1000, exp.rate),
+                                sample.mean = rep(-1, 1000),
+                                sample.sdev = rep(-1, 1000))
+    for(i in 1:1000) {
+        draws <- sample(data.exp.dosm$pop, 40)
+        data.exp.dosm$sample.mean[i] <- mean(draws)
+        data.exp.dosm$sample.sdev[i] <- sd(draws)
+    }
+    
+    return(data.exp.dosm)
+}
+
+## creates plots of the simulated distributions
+createExpDoSM <- function(mean.sim = 5, sd.sim = 5 / sqrt(40),
+                          bw = 0.25, title1="", title2="") {
+    library(ggplot2)
+    # get frequency instead of density
+    fnorm <- function(scale, ...) { return(scale * dnorm(...)) }
+    
+    # create some data to work with
+    simData <- createSimData()
+    freq.scale <- 1000 * bw
+    # overlay normal frequency dist over histogram of DoSM
+    p <- ggplot(simData, geom = 'blank')
+    p <- p + aes(x = sample.mean, colour = 'simulation')
+    # overlay normal frequency distribution
+    p <- p + stat_function(fun = fnorm,
+                           arg = list(scale=freq.scale,
+                                      mean=mean.sim,
+                                      sd=sd.sim),
+                           aes(colour = 'normal'), size = 2)
+    p <- p + geom_histogram(aes(x = sample.mean), alpha = 0.4, binwidth = bw)
+    p <- p + scale_colour_manual(name = '', values = c('red', 'blue'))
+    p <- p + theme(legend.position = c(0.85, 0.85),
+                   legend.title = element_blank())
+    p <- p + ggtitle(title1)
+    
+    print(p)
+}
+
+t1 <- "Distribution of Sample Means from Exponential Distribution"
+createExpDoSM(title1 = t1)
+
+```
+Looking at the distribution of sample standard deviations...
+
+```{r echo=FALSE}
+# TODO
+```
+
+
